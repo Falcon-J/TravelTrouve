@@ -1,24 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Plus, Users, Loader2, LogOut } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus,
+  Users,
+  Search,
+  Camera,
+  Sparkles,
+  Settings,
+  UserCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { getUserGroups } from "@/lib/group-utils";
 import { CreateGroupModal } from "@/components/groups/modals/create-group-modal-new";
 import { JoinGroupModal } from "@/components/groups/modals/join-group-modal-new";
 import { GroupCard } from "@/components/groups/group-card";
+import { AutoHideNavbar } from "@/components/ui/auto-hide-navbar";
 import type { Group } from "@/types/group";
 
 export default function DashboardPage() {
   const [groups, setGroups] = useState<Group[]>([]);
+  const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -31,6 +43,7 @@ export default function DashboardPage() {
       try {
         const userGroups = await getUserGroups(user.uid);
         setGroups(userGroups);
+        setFilteredGroups(userGroups);
       } catch (error) {
         console.error("Error fetching groups:", error);
         toast({
@@ -46,184 +59,383 @@ export default function DashboardPage() {
     fetchGroups();
   }, [user, toast]);
 
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = groups.filter((group) =>
+        group.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredGroups(filtered);
+    } else {
+      setFilteredGroups(groups);
+    }
+  }, [searchTerm, groups]);
+
   const handleGroupCreated = (newGroup: Group) => {
     setGroups((prev) => [newGroup, ...prev]);
+    setFilteredGroups((prev) => [newGroup, ...prev]);
   };
 
   const handleGroupJoined = (joinedGroup: Group) => {
-    setGroups((prev) => [joinedGroup, ...prev]);
+    setGroups((prev) => {
+      const exists = prev.some((g) => g.id === joinedGroup.id);
+      if (exists) return prev;
+      const updated = [joinedGroup, ...prev];
+      setFilteredGroups(updated);
+      return updated;
+    });
   };
 
-  const handleSignOut = async () => {
-    try {
-      setSigningOut(true);
-      await signOut();
-      toast({
-        title: "Signed out successfully",
-        description: "You have been signed out of your account.",
-      });
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Error signing out",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSigningOut(false);
-    }
+  const handleEnterGroup = (group: Group) => {
+    window.location.href = `/groups/${group.id}`;
   };
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-4" />
-          <p className="text-slate-400">Loading...</p>
+      <>
+        <AutoHideNavbar />
+        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+          <div className="relative flex items-center justify-center min-h-[calc(100vh-4rem)] px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center max-w-md mx-auto"
+            >
+              <div className="relative mb-8">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-xl opacity-20" />
+                <Camera className="relative h-16 w-16 text-blue-400 mx-auto" />
+              </div>
+              <h1 className="text-3xl font-bold text-white mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Welcome to TravelTrouve
+              </h1>
+              <p className="text-slate-400 mb-8">
+                Please log in to view your travel groups and memories
+              </p>
+              <Button
+                onClick={() => (window.location.href = "/login")}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+              >
+                Sign In
+              </Button>
+            </motion.div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">
-                Welcome back, {user.displayName || user.email?.split("@")[0]}!
-              </h1>
-              <p className="text-slate-400">
-                Manage your travel groups and share memories
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white shadow-lg shadow-blue-500/20 rounded-xl"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Group
-              </Button>
-              <Button
-                onClick={() => setShowJoinModal(true)}
-                variant="outline"
-                className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Join Group
-              </Button>
-              <Button
-                onClick={handleSignOut}
-                disabled={signingOut}
-                variant="outline"
-                className="border-red-700 text-red-300 hover:bg-red-800/20 hover:text-red-200 hover:border-red-600 rounded-xl"
-              >
-                {signingOut ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <LogOut className="w-4 h-4 mr-2" />
-                )}
-                {signingOut ? "Signing out..." : "Sign Out"}
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Groups Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-4" />
-                <p className="text-slate-400">Loading your groups...</p>
+  if (loading) {
+    return (
+      <>
+        <AutoHideNavbar />
+        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+          <div className="relative flex items-center justify-center min-h-[calc(100vh-4rem)]">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center"
+            >
+              <div className="relative mb-4">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-lg opacity-30" />
+                <div className="relative h-12 w-12 mx-auto">
+                  <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-400 border-t-transparent" />
+                </div>
               </div>
-            </div>
-          ) : groups.length === 0 ? (
-            <div className="text-center py-12 px-4">
-              <div className="max-w-md mx-auto">
-                <Users className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  No groups yet
-                </h3>
-                <p className="text-slate-400 mb-6">
-                  Create your first travel group or join an existing one to
-                  start sharing memories.
+              <p className="text-slate-400">Loading your groups...</p>
+            </motion.div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const totalMembers = groups.reduce(
+    (acc, group) => acc + group.memberCount,
+    0
+  );
+  const totalPhotos = groups.reduce((acc, group) => acc + group.photoCount, 0);
+  const adminGroups = groups.filter((group) =>
+    group.adminIds.includes(user.uid)
+  );
+
+  return (
+    <>
+      <AutoHideNavbar />
+      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+
+        {/* Content */}
+        <div className="relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Welcome Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-8"
+            >
+              <div className="text-center mb-8">
+                <h2 className="text-4xl font-bold text-white mb-4">
+                  Welcome back, {user.displayName?.split(" ")[0] || "Traveler"}!
+                  <Sparkles className="inline h-8 w-8 text-yellow-400 ml-2" />
+                </h2>
+                <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                  Capture and share your travel memories with friends and
+                  family. Create groups for your adventures and relive those
+                  amazing moments.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              </div>
+            </motion.div>
+
+            {/* Stats Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+            >
+              <Card className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border-blue-700/30 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-200 text-sm font-medium">
+                        Total Groups
+                      </p>
+                      <p className="text-3xl font-bold text-white">
+                        {groups.length}
+                      </p>
+                    </div>
+                    <Users className="h-8 w-8 text-blue-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border-purple-700/30 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-200 text-sm font-medium">
+                        Admin Groups
+                      </p>
+                      <p className="text-3xl font-bold text-white">
+                        {adminGroups.length}
+                      </p>
+                    </div>
+                    <Settings className="h-8 w-8 text-purple-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-emerald-900/30 to-emerald-800/20 border-emerald-700/30 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-emerald-200 text-sm font-medium">
+                        Total Members
+                      </p>
+                      <p className="text-3xl font-bold text-white">
+                        {totalMembers}
+                      </p>
+                    </div>
+                    <UserCircle className="h-8 w-8 text-emerald-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 border-amber-700/30 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-amber-200 text-sm font-medium">
+                        Total Photos
+                      </p>
+                      <p className="text-3xl font-bold text-white">
+                        {totalPhotos}
+                      </p>
+                    </div>
+                    <Camera className="h-8 w-8 text-amber-400" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Action Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mb-8"
+            >
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                   <Button
                     onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white shadow-lg shadow-blue-500/20 rounded-xl"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Your First Group
+                    <Plus className="mr-2 h-5 w-5" />
+                    Create Group
                   </Button>
+
                   <Button
                     onClick={() => setShowJoinModal(true)}
                     variant="outline"
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white px-6 py-3 rounded-xl font-medium transition-all duration-200"
                   >
-                    <Users className="w-4 h-4 mr-2" />
-                    Join a Group
+                    <Users className="mr-2 h-5 w-5" />
+                    Join Group
                   </Button>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-xl font-semibold text-white mb-6">
-                Your Groups ({groups.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {groups.map((group, index) => {
-                  // Determine user role in the group
-                  const isAdmin = group.adminIds.includes(user.uid);
-                  const role = isAdmin ? "Admin" : "Member";
 
-                  return (
-                    <motion.div
-                      key={group.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                      <GroupCard
-                        group={{ ...group, role }}
-                        onEnterGroupAction={(g) =>
-                          (window.location.href = `/groups/${g.id}`)
-                        }
-                      />
-                    </motion.div>
-                  );
-                })}
+                <div className="relative w-full sm:w-80">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search your groups..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-400 rounded-xl focus:border-blue-500 transition-colors"
+                  />
+                </div>
               </div>
-            </div>
-          )}
-        </motion.div>
+            </motion.div>
+
+            {/* Groups Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              {filteredGroups.length === 0 ? (
+                <Card className="bg-slate-900/30 border-slate-700/50 backdrop-blur-sm">
+                  <CardContent className="p-12 text-center">
+                    {searchTerm ? (
+                      <>
+                        <Search className="mx-auto h-16 w-16 text-slate-600 mb-4" />
+                        <h3 className="text-xl font-semibold text-white mb-2">
+                          No groups found
+                        </h3>
+                        <p className="text-slate-400 mb-6">
+                          No groups match your search &ldquo;{searchTerm}
+                          &rdquo;. Try a different search term.
+                        </p>
+                        <Button
+                          onClick={() => setSearchTerm("")}
+                          variant="outline"
+                          className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                        >
+                          Clear Search
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative mb-6">
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-xl opacity-20" />
+                          <Users className="relative mx-auto h-16 w-16 text-slate-600" />
+                        </div>
+                        <h3 className="text-2xl font-semibold text-white mb-2">
+                          No groups yet
+                        </h3>
+                        <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                          Create your first travel group or join an existing one
+                          to start sharing amazing memories with your friends
+                          and family.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <Button
+                            onClick={() => setShowCreateModal(true)}
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+                          >
+                            <Plus className="mr-2 h-5 w-5" />
+                            Create Your First Group
+                          </Button>
+                          <Button
+                            onClick={() => setShowJoinModal(true)}
+                            variant="outline"
+                            className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white px-8 py-3 rounded-xl font-medium transition-all duration-200"
+                          >
+                            <Users className="mr-2 h-5 w-5" />
+                            Join Existing Group
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">
+                        Your Groups
+                      </h3>
+                      <p className="text-slate-400">
+                        {filteredGroups.length} of {groups.length} groups
+                        {searchTerm && ` matching "${searchTerm}"`}
+                      </p>
+                    </div>
+                    {searchTerm && (
+                      <Button
+                        onClick={() => setSearchTerm("")}
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-400 hover:text-white"
+                      >
+                        Clear Search
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <AnimatePresence>
+                      {filteredGroups.map((group, index) => (
+                        <motion.div
+                          key={group.id}
+                          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                          transition={{
+                            delay: index * 0.1,
+                            duration: 0.3,
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                          }}
+                          whileHover={{ y: -5 }}
+                          className="group"
+                        >
+                          <GroupCard
+                            group={{
+                              ...group,
+                              role: group.adminIds.includes(user.uid)
+                                ? "Admin"
+                                : "Member",
+                            }}
+                            onEnterGroupAction={handleEnterGroup}
+                          />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Modals */}
+        <CreateGroupModal
+          open={showCreateModal}
+          onOpenChangeAction={setShowCreateModal}
+          onGroupCreatedAction={handleGroupCreated}
+        />
+
+        <JoinGroupModal
+          open={showJoinModal}
+          onOpenChangeAction={setShowJoinModal}
+          onGroupJoinedAction={handleGroupJoined}
+        />
       </div>
-
-      {/* Modals */}
-      <CreateGroupModal
-        open={showCreateModal}
-        onOpenChangeAction={setShowCreateModal}
-        onGroupCreatedAction={handleGroupCreated}
-      />
-      <JoinGroupModal
-        open={showJoinModal}
-        onOpenChangeAction={setShowJoinModal}
-        onGroupJoinedAction={handleGroupJoined}
-      />
-    </div>
+    </>
   );
 }

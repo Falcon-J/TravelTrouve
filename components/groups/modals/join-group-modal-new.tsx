@@ -16,7 +16,6 @@ import { getGroupByCode, joinGroup } from "@/lib/group-utils";
 import { useAuth } from "@/context/auth-context";
 import type { Group } from "@/types/group";
 
-
 type JoinGroupModalProps = {
   open: boolean;
   onOpenChangeAction: (open: boolean) => void;
@@ -69,6 +68,17 @@ export function JoinGroupModal({
         return;
       }
 
+      // Check if group is private and join requests are not allowed
+      if (group.isPrivate && !group.allowJoinRequests) {
+        toast({
+          title: "Private Group",
+          description:
+            "This group is private and doesn't allow join requests. You need an invitation.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setFoundGroup(group);
     } catch (error) {
       toast({
@@ -87,6 +97,22 @@ export function JoinGroupModal({
     setIsJoining(true);
 
     try {
+      // Check if this is a private group that requires join requests
+      if (foundGroup.isPrivate && foundGroup.allowJoinRequests) {
+        // TODO: Implement join request functionality
+        toast({
+          title: "Join request sent",
+          description:
+            "Your request to join this private group has been sent to the admins",
+        });
+
+        onOpenChangeAction(false);
+        setGroupCode("");
+        setFoundGroup(null);
+        return;
+      }
+
+      // Direct join for public groups or invited private groups
       await joinGroup(foundGroup.id, user.uid);
 
       toast({
@@ -97,6 +123,7 @@ export function JoinGroupModal({
       onGroupJoinedAction({
         ...foundGroup,
         memberIds: [...foundGroup.memberIds, user.uid],
+        memberCount: foundGroup.memberCount + 1,
       });
       onOpenChangeAction(false);
 
@@ -124,7 +151,7 @@ export function JoinGroupModal({
   return (
     <Dialog
       open={open}
-      onOpenChange ={isSearching || isJoining ? undefined : onOpenChangeAction}
+      onOpenChange={isSearching || isJoining ? undefined : onOpenChangeAction}
     >
       <DialogContent className="sm:max-w-md rounded-2xl bg-slate-900 border-slate-800">
         <DialogHeader>
@@ -189,6 +216,9 @@ export function JoinGroupModal({
                 </p>
                 <p className="text-sm text-slate-400">
                   {foundGroup.isPrivate ? "Private" : "Public"} group
+                  {foundGroup.isPrivate &&
+                    foundGroup.allowJoinRequests &&
+                    " • Join requests allowed"}
                 </p>
               </div>
             </div>
@@ -219,8 +249,12 @@ export function JoinGroupModal({
                 {isJoining ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Joining...
+                    {foundGroup.isPrivate && foundGroup.allowJoinRequests
+                      ? "Requesting..."
+                      : "Joining..."}
                   </>
+                ) : foundGroup.isPrivate && foundGroup.allowJoinRequests ? (
+                  "Request to Join"
                 ) : (
                   "Join Group"
                 )}

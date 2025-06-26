@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,8 @@ import {
   MapPin,
   Calendar,
   Download,
-  MoreHorizontal,
   Send,
-  X,
+  Eye,
 } from "lucide-react";
 import Image from "next/image";
 import type { Group } from "@/types/group";
@@ -33,24 +32,18 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 interface GroupFeedProps {
   group: Group;
+  onOpenUpload?: () => void;
 }
 
-export function GroupFeed({ group }: GroupFeedProps) {
+export function GroupFeed({ group, onOpenUpload }: GroupFeedProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +51,8 @@ export function GroupFeed({ group }: GroupFeedProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [showComments, setShowComments] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
@@ -65,7 +60,7 @@ export function GroupFeed({ group }: GroupFeedProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -79,7 +74,7 @@ export function GroupFeed({ group }: GroupFeedProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [group.id]);
 
   const handleLike = async (photoId: string) => {
     if (!user) {
@@ -92,33 +87,31 @@ export function GroupFeed({ group }: GroupFeedProps) {
     }
 
     try {
-      await togglePhotoLike(group.id, photoId, user.uid);
-
-      // Update the specific photo in the state instead of refreshing all photos
-      setPhotos((prevPhotos) =>
-        prevPhotos.map((photo) => {
+      // Optimistically update the UI first
+      setPhotos((prev) =>
+        prev.map((photo) => {
           if (photo.id === photoId) {
-            const isCurrentlyLiked = photo.likes?.includes(user.uid) || false;
-            const newLikes = isCurrentlyLiked
-              ? photo.likes?.filter((id) => id !== user.uid) || []
-              : [...(photo.likes || []), user.uid];
-
+            const isLiked = photo.likes?.includes(user.uid);
             return {
               ...photo,
-              likes: newLikes,
-              likeCount: newLikes.length,
+              likes: isLiked
+                ? photo.likes.filter((id) => id !== user.uid)
+                : [...(photo.likes || []), user.uid],
+              likeCount: isLiked
+                ? (photo.likeCount || 1) - 1
+                : (photo.likeCount || 0) + 1,
             };
           }
           return photo;
         })
       );
 
-      toast({
-        title: "Success",
-        description: "Photo like toggled",
-      });
+      // Then update the backend
+      await togglePhotoLike(group.id, photoId, user.uid);
     } catch (error) {
       console.error("Error toggling like:", error);
+      // Revert the optimistic update on error
+      await fetchPhotos();
       toast({
         title: "Error",
         description: "Failed to like photo",
@@ -127,7 +120,7 @@ export function GroupFeed({ group }: GroupFeedProps) {
     }
   };
 
-  const downloadPhoto = (photo: Photo, isOriginal: boolean = false) => {
+  const downloadPhoto = (photo: Photo) => {
     try {
       const dataUrl = photo.imageData || photo.url;
       const link = document.createElement("a");
@@ -137,12 +130,10 @@ export function GroupFeed({ group }: GroupFeedProps) {
       const fileExtension = photo.fileType
         ? photo.fileType.split("/")[1]
         : "jpg";
-      const baseFilename = photo.originalName
-        ? photo.originalName.split(".")[0]
-        : photo.filename?.split(".")[0] || "photo";
-
-      const filename = `${baseFilename}_${
-        isOriginal ? "original" : "compressed"
+      const filename = `${
+        photo.originalName?.replace(/\.[^/.]+$/, "") ||
+        photo.filename?.replace(/\.[^/.]+$/, "") ||
+        "photo"
       }.${fileExtension}`;
 
       link.download = filename;
@@ -152,9 +143,7 @@ export function GroupFeed({ group }: GroupFeedProps) {
 
       toast({
         title: "Download Started",
-        description: `Downloading ${
-          isOriginal ? "original" : "compressed"
-        } photo as ${filename}`,
+        description: "Downloading photo...",
       });
     } catch (error) {
       console.error("Error downloading photo:", error);
@@ -164,6 +153,11 @@ export function GroupFeed({ group }: GroupFeedProps) {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePreviewPhoto = (photo: Photo) => {
+    setPreviewPhoto(photo);
+    setShowImagePreview(true);
   };
 
   const handleComment = async (photo: Photo) => {
@@ -237,7 +231,7 @@ export function GroupFeed({ group }: GroupFeedProps) {
 
   useEffect(() => {
     fetchPhotos();
-  }, [group.id]);
+  }, [fetchPhotos]);
 
   // Filter photos based on search term
   const filteredPhotos = photos.filter((photo) => {
@@ -389,33 +383,26 @@ export function GroupFeed({ group }: GroupFeedProps) {
                       fill
                       className="object-cover"
                     />
-                    {/* Download button overlay */}
-                    <div className="absolute top-2 right-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 border-0"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => downloadPhoto(photo, false)}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download Compressed
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => downloadPhoto(photo, true)}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download Original
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    {/* Action buttons overlay */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handlePreviewPhoto(photo)}
+                        className="bg-white/20 hover:bg-white/30 border-0 text-white"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => downloadPhoto(photo)}
+                        className="bg-white/20 hover:bg-white/30 border-0 text-white"
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
                     </div>
                   </div>
                   <div className="p-4">
@@ -526,33 +513,24 @@ export function GroupFeed({ group }: GroupFeedProps) {
                         fill
                         className="object-cover"
                       />
-                      {/* Download button overlay */}
-                      <div className="absolute top-2 right-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 border-0"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => downloadPhoto(photo, false)}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download Compressed
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => downloadPhoto(photo, true)}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download Original
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      {/* Action buttons overlay */}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handlePreviewPhoto(photo)}
+                          className="bg-white/20 hover:bg-white/30 border-0 text-white"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => downloadPhoto(photo)}
+                          className="bg-white/20 hover:bg-white/30 border-0 text-white"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     <div className="flex-1 p-6">
@@ -659,7 +637,18 @@ export function GroupFeed({ group }: GroupFeedProps) {
           <p className="text-gray-400 mb-6">
             Be the first to share a photo in this group!
           </p>
-          <Button className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+          <Button
+            className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            onClick={() => {
+              if (onOpenUpload) {
+                onOpenUpload();
+              } else {
+                // Fallback to the custom event if onOpenUpload is not provided
+                const event = new CustomEvent("open-group-upload");
+                window.dispatchEvent(event);
+              }
+            }}
+          >
             <Camera className="h-4 w-4 mr-2" />
             Upload Photo
           </Button>
@@ -682,7 +671,7 @@ export function GroupFeed({ group }: GroupFeedProps) {
               No photos found
             </h3>
             <p className="text-gray-400 mb-6">
-              No photos match your search for "{searchTerm}"
+              No photos match your search for &ldquo;{searchTerm}&rdquo;
             </p>
             <Button
               onClick={() => setSearchTerm("")}
@@ -696,50 +685,30 @@ export function GroupFeed({ group }: GroupFeedProps) {
 
       {/* Comments Modal */}
       <Dialog open={showComments} onOpenChange={setShowComments}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-gray-900 border-gray-700">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-white flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                Comments
-              </DialogTitle>
-              {/* <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowComments(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </Button> */}
-            </div>
+        <DialogContent className="max-w-3xl w-full h-[85vh] md:h-[85vh] sm:h-[90vh] bg-gray-900 border-gray-700 p-0 flex flex-col mx-4 md:mx-auto">
+          <DialogHeader className="flex-shrink-0 px-4 md:px-6 py-4 border-b border-gray-700">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Comments
+            </DialogTitle>
           </DialogHeader>
 
           {selectedPhoto && (
-            <div className="flex gap-6 h-[70vh]">
-              {/* Left side - Photo */}
-              <div className="flex-1 flex flex-col">
-                <div className="flex-1 flex items-center justify-center bg-black rounded-lg overflow-hidden">
-                  <div className="relative max-w-full max-h-full">
-                    <Image
-                      src={selectedPhoto.imageData || selectedPhoto.url}
-                      alt={selectedPhoto.description || "Photo"}
-                      width={600}
-                      height={600}
-                      className="object-contain max-w-full max-h-full"
-                      style={{
-                        maxHeight: "60vh",
-                        width: "auto",
-                        height: "auto",
-                      }}
-                    />
-                  </div>
+            <div className="flex flex-col h-full min-h-0">
+              {/* Photo preview */}
+              <div className="flex-shrink-0 px-4 md:px-6 py-4 border-b border-gray-700">
+                <div className="relative aspect-video bg-gray-800 rounded-lg overflow-hidden max-h-40 md:max-h-48">
+                  <Image
+                    src={selectedPhoto.imageData || selectedPhoto.url}
+                    alt={selectedPhoto.description || "Photo"}
+                    fill
+                    className="object-contain"
+                  />
                 </div>
-
-                {/* Photo info below image */}
-                <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-sm bg-blue-600 text-white">
+                <div className="mt-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-7 w-7">
+                      <AvatarFallback className="text-xs bg-blue-600 text-white">
                         {selectedPhoto.user?.displayName
                           ? selectedPhoto.user.displayName
                               .slice(0, 2)
@@ -752,7 +721,8 @@ export function GroupFeed({ group }: GroupFeedProps) {
                         {selectedPhoto.user?.displayName ||
                           selectedPhoto.userId.slice(0, 8)}
                       </span>
-                      <div className="text-xs text-gray-400">
+                      <div className="flex items-center text-xs text-gray-500">
+                        <Calendar className="h-3 w-3 mr-1" />
                         {selectedPhoto.uploadDate ||
                           new Date().toLocaleDateString()}
                       </div>
@@ -764,7 +734,7 @@ export function GroupFeed({ group }: GroupFeedProps) {
                     </p>
                   )}
                   {selectedPhoto.location && (
-                    <div className="flex items-center text-xs text-gray-400">
+                    <div className="flex items-center text-xs text-gray-400 mb-2">
                       <MapPin className="h-3 w-3 mr-1" />
                       {selectedPhoto.location}
                     </div>
@@ -772,113 +742,208 @@ export function GroupFeed({ group }: GroupFeedProps) {
                 </div>
               </div>
 
-              {/* Right side - Comments */}
-              <div className="w-80 flex flex-col border-l border-gray-700 pl-6">
-                <h4 className="font-medium text-white mb-4 flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  Comments ({comments.length})
-                </h4>
-
-                {/* Comments list */}
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                  {loadingComments ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">
-                        Loading comments...
-                      </p>
-                    </div>
-                  ) : comments.length === 0 ? (
-                    <div className="text-center py-8">
-                      <MessageCircle className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                      <p className="text-gray-400 text-sm">
-                        No comments yet. Be the first to comment!
-                      </p>
-                    </div>
-                  ) : (
-                    comments.map((comment) => (
-                      <div key={comment.id} className="flex items-start gap-3">
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarFallback className="text-xs bg-blue-600 text-white">
-                            {comment.user?.displayName
-                              ? comment.user.displayName
-                                  .slice(0, 2)
-                                  .toUpperCase()
-                              : comment.userId.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="bg-gray-800 rounded-lg px-3 py-2">
-                            <p className="font-medium text-sm text-white mb-1">
-                              {comment.user?.displayName ||
-                                comment.userId.slice(0, 8)}
-                            </p>
-                            <p className="text-sm text-gray-300 break-words">
-                              {comment.text}
-                            </p>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1 ml-3">
-                            {comment.createdAt?.toDate?.()?.toLocaleString() ||
-                              "Just now"}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Add comment form */}
-                {user ? (
-                  <div className="border-t border-gray-700 pt-4">
-                    <div className="flex gap-3">
-                      <Avatar className="h-8 w-8 flex-shrink-0">
-                        <AvatarFallback className="text-xs bg-blue-600 text-white">
-                          {user.displayName
-                            ? user.displayName.slice(0, 2).toUpperCase()
-                            : user.uid.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 flex flex-col gap-2">
-                        <Textarea
-                          placeholder="Write a comment..."
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 resize-none text-sm"
-                          rows={3}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSubmitComment();
-                            }
-                          }}
-                        />
-                        <div className="flex justify-end">
-                          <Button
-                            onClick={handleSubmitComment}
-                            disabled={!newComment.trim() || submittingComment}
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            {submittingComment ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            ) : (
-                              <>
-                                <Send className="h-4 w-4 mr-1" />
-                                Post
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+              {/* Comments list */}
+              <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-3 min-h-0">
+                {loadingComments ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-3" />
+                    <p className="text-gray-400 text-sm">Loading comments...</p>
                   </div>
-                ) : (
-                  <div className="border-t border-gray-700 pt-4">
-                    <p className="text-center text-gray-400 text-sm">
-                      Please sign in to add comments
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageCircle className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400 text-sm mb-1">
+                      No comments yet
+                    </p>
+                    <p className="text-gray-500 text-xs">
+                      Be the first to comment on this photo!
                     </p>
                   </div>
+                ) : (
+                  comments.map((comment) => (
+                    <div key={comment.id} className="flex items-start gap-3">
+                      <Avatar className="h-8 w-8 flex-shrink-0 mt-1">
+                        <AvatarFallback className="text-xs bg-blue-600 text-white">
+                          {comment.user?.displayName
+                            ? comment.user.displayName.slice(0, 2).toUpperCase()
+                            : comment.userId.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="bg-gray-800 rounded-lg px-3 py-2 mb-1">
+                          <p className="font-medium text-sm text-white mb-1">
+                            {comment.user?.displayName ||
+                              comment.userId.slice(0, 8)}
+                          </p>
+                          <p className="text-sm text-gray-200 leading-relaxed">
+                            {comment.text}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 px-3">
+                          {comment.createdAt?.toDate?.()?.toLocaleString() ||
+                            "Just now"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
                 )}
+              </div>
+
+              {/* Add comment form */}
+              {user && (
+                <div className="flex-shrink-0 border-t border-gray-700 px-4 md:px-6 py-4">
+                  <div className="flex gap-2 md:gap-3">
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarFallback className="text-xs bg-blue-600 text-white">
+                        {user.displayName
+                          ? user.displayName.slice(0, 2).toUpperCase()
+                          : user.uid.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 flex gap-2">
+                      <Textarea
+                        placeholder="Write a comment..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="flex-1 bg-gray-800 border-gray-600 text-white placeholder-gray-400 resize-none min-h-0 text-sm"
+                        rows={2}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmitComment();
+                          }
+                        }}
+                      />
+                      <Button
+                        onClick={handleSubmitComment}
+                        disabled={!newComment.trim() || submittingComment}
+                        size="sm"
+                        className="self-end bg-blue-600 hover:bg-blue-700 text-white px-3"
+                      >
+                        {submittingComment ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!user && (
+                <div className="flex-shrink-0 border-t border-gray-700 px-4 md:px-6 py-4">
+                  <p className="text-center text-gray-400 text-sm">
+                    Please sign in to add comments
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      <Dialog open={showImagePreview} onOpenChange={setShowImagePreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-gray-900 border-gray-700 p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Image Preview</DialogTitle>
+          </DialogHeader>
+
+          {previewPhoto && (
+            <div className="relative">
+              <div className="relative w-full max-h-[80vh] bg-black rounded-lg overflow-hidden">
+                <Image
+                  src={previewPhoto.imageData || previewPhoto.url}
+                  alt={previewPhoto.description || "Photo preview"}
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-contain max-h-[80vh]"
+                  priority
+                />
+              </div>
+
+              {/* Photo info overlay */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="text-xs bg-blue-600 text-white">
+                      {previewPhoto.user?.displayName
+                        ? previewPhoto.user.displayName
+                            .slice(0, 2)
+                            .toUpperCase()
+                        : previewPhoto.userId.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-white">
+                    {previewPhoto.user?.displayName ||
+                      previewPhoto.userId.slice(0, 8)}
+                  </span>
+                  <span className="text-xs text-gray-300">•</span>
+                  <span className="text-xs text-gray-300">
+                    {previewPhoto.uploadDate || new Date().toLocaleDateString()}
+                  </span>
+                </div>
+
+                {previewPhoto.description && (
+                  <p className="text-sm text-white mb-1">
+                    {previewPhoto.description}
+                  </p>
+                )}
+
+                {previewPhoto.location && (
+                  <div className="flex items-center text-xs text-gray-300 mb-2">
+                    <MapPin className="h-3 w-3 mr-1" />
+                    {previewPhoto.location}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button
+                      className={`flex items-center gap-1 text-sm transition-colors ${
+                        previewPhoto.likes?.includes(user?.uid || "")
+                          ? "text-red-400 hover:text-red-300"
+                          : "text-white hover:text-red-400"
+                      }`}
+                      onClick={() => handleLike(previewPhoto.id)}
+                      disabled={!user}
+                    >
+                      <Heart
+                        className={`h-4 w-4 ${
+                          previewPhoto.likes?.includes(user?.uid || "")
+                            ? "fill-current"
+                            : ""
+                        }`}
+                      />
+                      <span>{previewPhoto.likeCount || 0}</span>
+                    </button>
+
+                    <button
+                      className="flex items-center gap-1 text-sm text-white hover:text-blue-400 transition-colors"
+                      onClick={() => {
+                        setSelectedPhoto(previewPhoto);
+                        setShowImagePreview(false);
+                        setShowComments(true);
+                      }}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span>{previewPhoto.commentCount || 0}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => downloadPhoto(previewPhoto)}
+                      className="bg-black/50 border-gray-600 text-white hover:bg-black/70"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

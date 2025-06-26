@@ -10,14 +10,6 @@ import { MapView } from "./sections/map-view";
 import { GroupSettings } from "./sections/group-settings";
 import type { Group } from "@/types/group";
 import type { AppUser } from "@/types/user";
-
-
-import {User} from "@/types/user";
-
-interface GroupSettingsProps {
-  group: Group;
-  currentUser: User;
-}
 interface GroupViewProps {
   group: Group;
   currentUser: AppUser;
@@ -36,7 +28,7 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
       out: { opacity: 0, y: -10 },
     };
 
-    const pageTransition = {
+    const pageTransition: import("framer-motion").Transition = {
       type: "spring",
       stiffness: 260,
       damping: 20,
@@ -48,6 +40,7 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
         animate="in"
         exit="out"
         variants={pageVariants}
+        transition={pageTransition}
         className="bg-slate-900/95 backdrop-blur-xl rounded-xl p-4 shadow-lg border border-slate-800"
       >
         {children}
@@ -58,7 +51,10 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
       case "feed":
         return (
           <ContentWrapper key="feed">
-            <GroupFeed group={group} />
+            <GroupFeed
+              group={group}
+              onOpenUpload={() => setActiveViewAction("upload")}
+            />
           </ContentWrapper>
         );
       case "upload":
@@ -70,7 +66,7 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
       case "members":
         return (
           <ContentWrapper key="members">
-            <GroupMembers group={group} currentUser={currentUser} />
+            <GroupMembers group={group} />
           </ContentWrapper>
         );
       case "map":
@@ -82,13 +78,16 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
       case "settings":
         return (
           <ContentWrapper key="settings">
-            <GroupSettings group={group} currentUser={currentUser} />
+            <GroupSettings group={group} />
           </ContentWrapper>
         );
       default:
         return (
           <ContentWrapper key="default">
-            <GroupFeed group={group} />
+            <GroupFeed
+              group={group}
+              onOpenUpload={() => setActiveViewAction("upload")}
+            />
           </ContentWrapper>
         );
     }
@@ -102,7 +101,7 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
         activeView={activeView}
         setActiveViewAction={setActiveViewAction}
         sidebarOpen={sidebarOpen}
-        setSidebarOpenAction={setSidebarOpenAction  }
+        setSidebarOpenAction={setSidebarOpenAction}
       />
 
       <main className="flex-1 relative w-full lg:p-8">
@@ -130,7 +129,7 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
                       {group.photoCount} photo
                       {group.photoCount !== 1 ? "s" : ""}
-                    </span> 
+                    </span>
                   </div>
                 </div>
               </div>
@@ -150,5 +149,3 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
     </div>
   );
 }
-
-

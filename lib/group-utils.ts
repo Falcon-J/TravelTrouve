@@ -192,6 +192,114 @@ export async function leaveGroup(
   }
 }
 
+// Update group settings
+export async function updateGroupSettings(
+  groupId: string,
+  updates: Partial<Pick<Group, "name" | "isPrivate" | "allowJoinRequests">>,
+  userId: string
+): Promise<void> {
+  try {
+    const group = await getGroupById(groupId);
+
+    if (!group) {
+      throw new Error("Group not found");
+    }
+
+    if (!isUserAdmin(group, userId)) {
+      throw new Error("Only admins can update group settings");
+    }
+
+    const groupRef = doc(groupsRef, groupId);
+    await updateDoc(groupRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error updating group settings:", error);
+    throw error;
+  }
+}
+
+// Remove member from group (admin only)
+export async function removeMember(
+  groupId: string,
+  memberIdToRemove: string,
+  adminUserId: string
+): Promise<void> {
+  try {
+    const group = await getGroupById(groupId);
+
+    if (!group) {
+      throw new Error("Group not found");
+    }
+
+    if (!isUserAdmin(group, adminUserId)) {
+      throw new Error("Only admins can remove members");
+    }
+
+    if (memberIdToRemove === group.creatorId) {
+      throw new Error("Cannot remove the group creator");
+    }
+
+    if (memberIdToRemove === adminUserId) {
+      throw new Error("Cannot remove yourself. Use leave group instead");
+    }
+
+    const groupRef = doc(groupsRef, groupId);
+    await updateDoc(groupRef, {
+      memberIds: arrayRemove(memberIdToRemove),
+      adminIds: arrayRemove(memberIdToRemove), // Remove from admin too if they were admin
+      memberCount: increment(-1),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error removing member:", error);
+    throw error;
+  }
+}
+
+// Toggle admin role (admin only)
+export async function toggleAdminRole(
+  groupId: string,
+  targetUserId: string,
+  adminUserId: string,
+  makeAdmin: boolean
+): Promise<void> {
+  try {
+    const group = await getGroupById(groupId);
+
+    if (!group) {
+      throw new Error("Group not found");
+    }
+
+    if (!isUserAdmin(group, adminUserId)) {
+      throw new Error("Only admins can change member roles");
+    }
+
+    // Cannot change your own role unless you're the creator
+    if (targetUserId === adminUserId && group.creatorId !== adminUserId) {
+      throw new Error("You cannot change your own admin status");
+    }
+
+    const groupRef = doc(groupsRef, groupId);
+
+    if (makeAdmin) {
+      await updateDoc(groupRef, {
+        adminIds: arrayUnion(targetUserId),
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await updateDoc(groupRef, {
+        adminIds: arrayRemove(targetUserId),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    console.error("Error toggling admin role:", error);
+    throw error;
+  }
+}
+
 // Check if user is admin
 export function isUserAdmin(group: Group, userId: string): boolean {
   return group.adminIds?.includes(userId) ?? false;

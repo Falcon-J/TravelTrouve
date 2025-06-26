@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Copy, Users, Calendar, ArrowRight, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
@@ -30,7 +29,7 @@ export function GroupCard({ group, onEnterGroupAction }: GroupCardProps) {
         description: "Group code has been copied to clipboard",
       });
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast({
         title: "Failed to copy",
         description: "Please try again",
@@ -44,7 +43,6 @@ export function GroupCard({ group, onEnterGroupAction }: GroupCardProps) {
       whileHover={{ y: -4, scale: 1.02 }}
       transition={{ duration: 0.2 }}
       className="group cursor-pointer"
-      onClick={() => onEnterGroupAction(group)}
     >
       <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur-xl">
         {/* Photo Preview */}
@@ -90,7 +88,10 @@ export function GroupCard({ group, onEnterGroupAction }: GroupCardProps) {
                   }
                   if (group.createdAt && typeof group.createdAt === "object") {
                     // Firebase Timestamp object
-                    const timestamp = group.createdAt as any;
+                    const timestamp = group.createdAt as {
+                      seconds?: number;
+                      toDate?: () => Date;
+                    };
                     if (timestamp.seconds) {
                       return new Date(
                         timestamp.seconds * 1000
@@ -150,7 +151,8 @@ export function GroupCard({ group, onEnterGroupAction }: GroupCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg -mr-2"
+              className="text-slate-300 hover:text-white hover:bg-slate-800/50 rounded-lg -mr-2 hover:cursor-pointer"
+              onClick={() => onEnterGroupAction(group)}
             >
               View Group
               <ArrowRight className="h-4 w-4 ml-1" />

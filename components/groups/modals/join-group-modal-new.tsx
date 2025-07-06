@@ -12,7 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Users, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getGroupByCode, joinGroup } from "@/lib/group-utils";
+import {
+  getGroupByCode,
+  joinGroup,
+  submitJoinRequest,
+} from "@/lib/group-utils";
 import { useAuth } from "@/context/auth-context";
 import type { Group } from "@/types/group";
 
@@ -80,7 +84,7 @@ export function JoinGroupModal({
       }
 
       setFoundGroup(group);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error searching for group",
         description: "Please try again later",
@@ -99,7 +103,15 @@ export function JoinGroupModal({
     try {
       // Check if this is a private group that requires join requests
       if (foundGroup.isPrivate && foundGroup.allowJoinRequests) {
-        // TODO: Implement join request functionality
+        // Submit join request
+        await submitJoinRequest({
+          groupId: foundGroup.id,
+          userId: user.uid,
+          message: `Join request from ${
+            user.email || user.displayName || "Unknown User"
+          }`,
+        });
+
         toast({
           title: "Join request sent",
           description:
@@ -244,7 +256,7 @@ export function JoinGroupModal({
                 type="button"
                 onClick={handleJoin}
                 disabled={isJoining}
-                className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                className="rounded-xl bg-slate-800/50 border border-white/10 hover:bg-slate-700/50 text-white"
               >
                 {isJoining ? (
                   <>

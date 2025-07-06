@@ -1,14 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Only ignore during development, not production
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: process.env.NODE_ENV === "development",
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: process.env.NODE_ENV === "development",
   },
   images: {
     unoptimized: true,
+    domains: ["ui-avatars.com"],
   },
-}
+  // Production optimizations
+  experimental: {
+    optimizeCss: true,
+  },
+};
 
-export default nextConfig
+export default nextConfig;

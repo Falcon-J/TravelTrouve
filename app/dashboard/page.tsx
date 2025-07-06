@@ -20,7 +20,7 @@ import { getUserGroups } from "@/lib/group-utils";
 import { CreateGroupModal } from "@/components/groups/modals/create-group-modal-new";
 import { JoinGroupModal } from "@/components/groups/modals/join-group-modal-new";
 import { GroupCard } from "@/components/groups/group-card";
-import { AutoHideNavbar } from "@/components/ui/auto-hide-navbar";
+import { Navbar } from "@/components/layout/navbar";
 import type { Group } from "@/types/group";
 
 export default function DashboardPage() {
@@ -92,9 +92,9 @@ export default function DashboardPage() {
   if (!user) {
     return (
       <>
-        <AutoHideNavbar />
-        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+        <Navbar />
+        <div className="min-h-screen bg-black pt-16">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20" />
           <div className="relative flex items-center justify-center min-h-[calc(100vh-4rem)] px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -102,10 +102,10 @@ export default function DashboardPage() {
               className="text-center max-w-md mx-auto"
             >
               <div className="relative mb-8">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-xl opacity-20" />
+                <div className="absolute inset-0 bg-white/5 rounded-full blur-xl" />
                 <Camera className="relative h-16 w-16 text-blue-400 mx-auto" />
               </div>
-              <h1 className="text-3xl font-bold text-white mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-white mb-4">
                 Welcome to TravelTrouve
               </h1>
               <p className="text-slate-400 mb-8">
@@ -113,7 +113,7 @@ export default function DashboardPage() {
               </p>
               <Button
                 onClick={() => (window.location.href = "/login")}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+                className="bg-slate-800/50 border border-white/10 hover:bg-slate-700/50 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-white/10"
               >
                 Sign In
               </Button>
@@ -127,9 +127,9 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <>
-        <AutoHideNavbar />
-        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16">
-          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+        <Navbar />
+        <div className="min-h-screen bg-black pt-16">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20" />
           <div className="relative flex items-center justify-center min-h-[calc(100vh-4rem)]">
             <motion.div
               initial={{ opacity: 0 }}
@@ -137,7 +137,7 @@ export default function DashboardPage() {
               className="text-center"
             >
               <div className="relative mb-4">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-lg opacity-30" />
+                <div className="absolute inset-0 bg-white/5 rounded-full blur-lg" />
                 <div className="relative h-12 w-12 mx-auto">
                   <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-400 border-t-transparent" />
                 </div>
@@ -161,10 +161,10 @@ export default function DashboardPage() {
 
   return (
     <>
-      <AutoHideNavbar />
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16">
+      <Navbar />
+      <div className="min-h-screen bg-black pt-16">
         {/* Background Pattern */}
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20" />
 
         {/* Content */}
         <div className="relative">
@@ -189,77 +189,7 @@ export default function DashboardPage() {
               </div>
             </motion.div>
 
-            {/* Stats Cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-            >
-              <Card className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border-blue-700/30 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-blue-200 text-sm font-medium">
-                        Total Groups
-                      </p>
-                      <p className="text-3xl font-bold text-white">
-                        {groups.length}
-                      </p>
-                    </div>
-                    <Users className="h-8 w-8 text-blue-400" />
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border-purple-700/30 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-purple-200 text-sm font-medium">
-                        Admin Groups
-                      </p>
-                      <p className="text-3xl font-bold text-white">
-                        {adminGroups.length}
-                      </p>
-                    </div>
-                    <Settings className="h-8 w-8 text-purple-400" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-emerald-900/30 to-emerald-800/20 border-emerald-700/30 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-emerald-200 text-sm font-medium">
-                        Total Members
-                      </p>
-                      <p className="text-3xl font-bold text-white">
-                        {totalMembers}
-                      </p>
-                    </div>
-                    <UserCircle className="h-8 w-8 text-emerald-400" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-amber-900/30 to-amber-800/20 border-amber-700/30 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-amber-200 text-sm font-medium">
-                        Total Photos
-                      </p>
-                      <p className="text-3xl font-bold text-white">
-                        {totalPhotos}
-                      </p>
-                    </div>
-                    <Camera className="h-8 w-8 text-amber-400" />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
 
             {/* Action Section */}
             <motion.div
@@ -272,7 +202,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                   <Button
                     onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+                    className="bg-slate-800/50 border border-white/10 hover:bg-slate-700/50 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-white/10"
                   >
                     <Plus className="mr-2 h-5 w-5" />
                     Create Group
@@ -281,7 +211,7 @@ export default function DashboardPage() {
                   <Button
                     onClick={() => setShowJoinModal(true)}
                     variant="outline"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white px-6 py-3 rounded-xl font-medium transition-all duration-200"
+                    className="border-white/10 text-slate-300 hover:bg-white/10 hover:text-white px-6 py-3 rounded-xl font-medium transition-all duration-200"
                   >
                     <Users className="mr-2 h-5 w-5" />
                     Join Group
@@ -294,7 +224,7 @@ export default function DashboardPage() {
                     placeholder="Search your groups..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-400 rounded-xl focus:border-blue-500 transition-colors"
+                    className="pl-10 glass border-white/10 text-white placeholder:text-slate-400 rounded-xl focus:border-blue-400 transition-colors"
                   />
                 </div>
               </div>
@@ -322,7 +252,7 @@ export default function DashboardPage() {
                         <Button
                           onClick={() => setSearchTerm("")}
                           variant="outline"
-                          className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                          className="border-white/10 text-slate-300 hover:bg-white/10"
                         >
                           Clear Search
                         </Button>
@@ -330,7 +260,7 @@ export default function DashboardPage() {
                     ) : (
                       <>
                         <div className="relative mb-6">
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-xl opacity-20" />
+                          <div className="absolute inset-0 bg-white/5 rounded-full blur-xl" />
                           <Users className="relative mx-auto h-16 w-16 text-slate-600" />
                         </div>
                         <h3 className="text-2xl font-semibold text-white mb-2">
@@ -344,7 +274,7 @@ export default function DashboardPage() {
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                           <Button
                             onClick={() => setShowCreateModal(true)}
-                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+                            className="bg-slate-800/50 border border-white/10 hover:bg-slate-700/50 text-white px-8 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-white/10"
                           >
                             <Plus className="mr-2 h-5 w-5" />
                             Create Your First Group

@@ -1,5 +1,5 @@
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { ref, listAll, deleteObject } from "firebase/storage";
+import { collection, getDocs, deleteDoc} from "firebase/firestore";
+
 import { db} from "./firebase";
 
 // Delete all groups and their data

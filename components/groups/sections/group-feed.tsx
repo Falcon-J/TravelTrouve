@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Search,
-  Filter,
   Grid3X3,
   List,
   ImageIcon,
@@ -285,14 +284,6 @@ export function GroupFeed({ group, onOpenUpload }: GroupFeedProps) {
               className="rounded-xl"
             >
               <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-gray-700 text-white hover:bg-gray-800"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
             </Button>
             <Button
               onClick={fetchPhotos}

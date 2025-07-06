@@ -17,13 +17,12 @@ import {
 import type { GroupViewType } from "@/components/groups/group-view";
 
 import type { Group } from "@/types/group";
-import type { User } from "@/types/user";
+// import type { User } from "@/types/user";
 
 
 
 interface GroupSidebarProps {
   group: Group;
-  currentUser: User;
   activeView: GroupViewType;
   setActiveViewAction: (view: GroupViewType) => void;
   sidebarOpen: boolean;
@@ -43,15 +42,17 @@ const navItems = [
   },
 ];
 
+
 export function GroupSidebar({
   group,
-  currentUser,
   activeView,
   setActiveViewAction,
   sidebarOpen,
   setSidebarOpenAction,
 }: GroupSidebarProps) {
-  const isAdmin = group.role === "Admin";
+
+  // Determine if the current user is an admin of the group
+  const isAdmin = group?.role === "Admin";
 
   const filteredNavItems = navItems.filter(
     (item) => !item.adminOnly || isAdmin

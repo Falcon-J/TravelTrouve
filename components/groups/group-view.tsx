@@ -7,7 +7,7 @@ import { GroupFeed } from "./sections/group-feed";
 import { UploadPhotoSimple } from "./sections/upload-photo-new";
 import { GroupMembers } from "./sections/group-members";
 import { MapView } from "./sections/map-view";
-import { GroupSettings } from "./sections/group-settings";
+import { GroupSettings } from "./sections/group-settings-new";
 import type { Group } from "@/types/group";
 import type { AppUser } from "@/types/user";
 interface GroupViewProps {
@@ -17,7 +17,7 @@ interface GroupViewProps {
 
 export type GroupViewType = "feed" | "upload" | "members" | "map" | "settings";
 
-export function GroupView({ group, currentUser }: GroupViewProps) {
+export function GroupView({ group}: GroupViewProps) {
   const [activeView, setActiveViewAction] = useState<GroupViewType>("feed");
   const [sidebarOpen, setSidebarOpenAction] = useState(false);
 
@@ -60,7 +60,10 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
       case "upload":
         return (
           <ContentWrapper key="upload">
-            <UploadPhotoSimple group={group} />
+            <UploadPhotoSimple
+              group={group}
+              onPhotoUploaded={() => setActiveViewAction("feed")}
+            />
           </ContentWrapper>
         );
       case "members":
@@ -72,7 +75,7 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
       case "map":
         return (
           <ContentWrapper key="map">
-            <MapView group={group} />
+            <MapView  />
           </ContentWrapper>
         );
       case "settings":
@@ -94,10 +97,10 @@ export function GroupView({ group, currentUser }: GroupViewProps) {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-950 to-slate-900">
+    <div className="flex min-h-[calc(100vh-4rem)] ">
       <GroupSidebar
         group={group}
-        currentUser={currentUser}
+        // currentUser={currentUser}
         activeView={activeView}
         setActiveViewAction={setActiveViewAction}
         sidebarOpen={sidebarOpen}

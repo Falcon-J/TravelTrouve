@@ -14,6 +14,7 @@ import {
   serverTimestamp,
   arrayUnion,
   increment,
+  DocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { getGroupById } from "./group-utils";
@@ -39,16 +40,6 @@ async function enrichPhotosWithUserInfo(photos: Photo[]): Promise<Photo[]> {
       displayName: userDisplayNames[photo.userId] || photo.userId.slice(0, 8),
     },
   }));
-}
-
-// Helper function to convert file to base64
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
 }
 
 // Helper function to compress image for Firestore
@@ -142,7 +133,7 @@ export async function uploadPhotoToGroup(
     }
 
     // Check file size (limit to 2MB due to Firestore document size constraints)
-    const maxSize = 2 * 1024 * 1024; // 2MB - more conservative for Firestore
+    const maxSize = 5 * 1024 * 1024; // 2MB - more conservative for Firestore
     if (file.size > maxSize) {
       throw new Error("File size too large. Please choose a file under 2MB.");
     }
@@ -162,21 +153,6 @@ export async function uploadPhotoToGroup(
     const fileExtension = file.name?.split(".").pop()?.toLowerCase();
     const allowedExtensions = ["jpg", "jpeg", "png", "webp", "jfif"];
 
-    // Debug: Log the actual file type being detected
-    console.log("=== FILE VALIDATION DEBUG ===");
-    console.log("File details:", {
-      name: file.name,
-      type: file.type,
-      typeLength: file.type?.length,
-      extension: fileExtension,
-      size: file.size,
-    });
-    console.log("Type check result:", allowedTypes.includes(file.type));
-    console.log(
-      "Extension check result:",
-      fileExtension && allowedExtensions.includes(fileExtension)
-    );
-
     const isValidType = allowedTypes.includes(file.type);
     const isValidExtension =
       fileExtension && allowedExtensions.includes(fileExtension);
@@ -184,30 +160,16 @@ export async function uploadPhotoToGroup(
     // More permissive validation - pass if either type OR extension is valid, or if it's an image file
     const isImageFile = file.type?.startsWith("image/") || false;
 
-    console.log("Final validation:", {
-      isValidType,
-      isValidExtension,
-      isImageFile,
-      willPass: isValidType || isValidExtension || isImageFile,
-    });
-
     if (!isValidType && !isValidExtension && !isImageFile) {
       throw new Error(
         `Invalid file type: "${file.type}" (${fileExtension}). Please upload a JPEG, PNG, or WebP image.`
       );
     }
 
-    console.log("Processing photo for Firestore storage...");
-
     // Convert and compress image with Firestore size constraints
     let imageData: string;
     try {
       imageData = await compressImage(file);
-      console.log(
-        "Image compressed successfully, size:",
-        imageData.length,
-        "bytes"
-      );
 
       // Double-check Firestore document size limit (1MB = ~1.33MB base64)
       const estimatedDocSize = imageData.length + 1000; // Add buffer for other fields
@@ -259,10 +221,10 @@ export async function uploadPhotoToGroup(
 
     try {
       docRef = await addDoc(photosRef, photoData);
-      console.log("Photo document created:", docRef.id);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (
-        error.code === "invalid-argument" &&
+        error instanceof Error &&
+        (error as { code?: string }).code === "invalid-argument" &&
         error.message.includes("too large")
       ) {
         throw new Error(
@@ -295,8 +257,12 @@ export async function uploadPhotoToGroup(
 export async function getGroupPhotos(
   groupId: string,
   pageSize: number = 20,
-  lastVisible?: any
-): Promise<{ photos: Photo[]; lastVisible: any; hasMore: boolean }> {
+  lastVisible?: DocumentSnapshot
+): Promise<{
+  photos: Photo[];
+  lastVisible: DocumentSnapshot | null;
+  hasMore: boolean;
+}> {
   try {
     const photosRef = collection(db, `groups/${groupId}/photos`);
     let q = query(photosRef, orderBy("createdAt", "desc"));

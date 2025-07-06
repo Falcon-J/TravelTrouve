@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Navbar } from "@/components/navbar";
+// import { useState } from "react";
+// import { motion, AnimatePresence } from "framer-motion";
+// import { Navbar } from "@/components/layout/navbar";
 // import { Dashboard } from "@/components/dashboard";
-import { GroupView } from "@/components/groups/group-view";
-import { ProfileView } from "@/components/profile-view";
+// import { GroupView } from "@/components/groups/group-view";
+// import { ProfileView } from "@/components/profile-view";
 import HeroPage from "./hero/page";
 
 export interface Group {
@@ -44,17 +44,7 @@ export interface Photo {
 }
 
 // Default user - in a real app, this would come from authentication
-const defaultUser: User = {
-  id: "1",
-  name: "User",
-  email: "user@example.com",
-  avatar: "",
-  bio: "",
-  location: "",
-  joinedDate: new Date().toISOString(),
-  totalPhotos: 0,
-  totalGroups: 0,
-};
+
 
 export type ViewType = "dashboard" | "group" | "profile";
 

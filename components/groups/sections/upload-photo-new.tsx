@@ -216,7 +216,7 @@ export function UploadPhotoSimple({
                       Drag & drop photos here, or click to select
                     </p>
                     <p className="text-slate-400 mb-4">
-                      Supports JPG, PNG, GIF, WebP up to 10MB each
+                      Supports JPG, PNG, GIF, WebP up to 5MB each
                     </p>
                     <Button
                       type="button"

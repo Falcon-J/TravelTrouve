@@ -6,11 +6,11 @@ import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UploadPhotoSimple } from "@/components/groups/sections/upload-photo-new";
 import { GroupFeed } from "@/components/groups/sections/group-feed";
-import { AutoHideNavbar } from "@/components/ui/auto-hide-navbar";
+import { Navbar } from "@/components/layout/navbar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { getGroupById } from "@/lib/group-utils";
-import { GroupSettings } from "@/components/groups/sections/group-settings";
+import { GroupSettings } from "@/components/groups/sections/group-settings-new";
 import { GroupMembers } from "@/components/groups/sections/group-members";
 import { useAuth } from "@/context/auth-context";
 import type { Group } from "@/types/group";
@@ -88,8 +88,8 @@ export default function GroupPage() {
   if (!user) {
     return (
       <>
-        <AutoHideNavbar />
-        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16 flex items-center justify-center">
+        <Navbar />
+        <div className="min-h-screen bg-black pt-16 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-4" />
             <p className="text-slate-400">Loading...</p>
@@ -102,8 +102,8 @@ export default function GroupPage() {
   if (loading) {
     return (
       <>
-        <AutoHideNavbar />
-        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16 flex items-center justify-center">
+        <Navbar />
+        <div className="min-h-screen bg-black pt-16 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-4" />
             <p className="text-slate-400">Loading group...</p>
@@ -116,8 +116,8 @@ export default function GroupPage() {
   if (!group) {
     return (
       <>
-        <AutoHideNavbar />
-        <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16 flex items-center justify-center">
+        <Navbar />
+        <div className="min-h-screen bg-black pt-16 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white mb-2">
               Group not found
@@ -136,11 +136,8 @@ export default function GroupPage() {
 
   return (
     <>
-      <AutoHideNavbar
-        showBackButton={true}
-        onBackClick={() => router.push("/dashboard")}
-      />
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 pt-16">
+      <Navbar />
+      <div className="min-h-screen bg-black p-20">
         <div className="container mx-auto p-6 lg:p-8">
           {/* Group Header */}
           <motion.div
@@ -151,6 +148,14 @@ export default function GroupPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <div>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="flex items-center text-slate-400 hover:text-white transition mb-2"
+                  aria-label="Back to Dashboard"
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  <span className="arrowdashboard ">Back to Dashboard</span>
+                </button>
                 <h1 className="text-3xl font-bold text-white mb-2">
                   {group.name}
                 </h1>
@@ -170,8 +175,8 @@ export default function GroupPage() {
             onValueChange={setActiveTab}
             className="space-y-6"
           >
-            <div className="sticky top-0 z-40 -mx-6 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800 px-6 py-4">
-              <TabsList className="h-12 w-full justify-start bg-slate-900/50 border border-slate-800">
+            <div className="sticky top-0 z-40 -mx-6 glass border-b border-white/10 px-6 py-4">
+              <TabsList className="h-12 w-full justify-start glass border-white/10">
                 <TabsTrigger value="feed" className="text-sm">
                   Feed
                 </TabsTrigger>

@@ -1,54 +1,70 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { MapPin, Clock, MessageCircle, Share2, Bookmark } from "lucide-react"
-import Image from "next/image"
-import type { Photo } from "@/app/page"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Clock, MessageCircle, Share2, Bookmark } from "lucide-react";
+import Image from "next/image";
+import type { Photo } from "@/app/page";
 
 interface PhotoCardProps {
-  photo: Photo
-  onClick: () => void
-  viewMode?: "grid" | "list"
+  photo: Photo;
+  onClick: () => void;
+  viewMode?: "grid" | "list";
 }
 
-export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps) {
-  const [isBookmarked, setIsBookmarked] = useState(false)
+export function PhotoCard({
+  photo,
+  onClick,
+  viewMode = "grid",
+}: PhotoCardProps) {
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const handleBookmark = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsBookmarked(!isBookmarked)
-  }
+    e.stopPropagation();
+    setIsBookmarked(!isBookmarked);
+  };
 
   const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     if (navigator.share) {
       navigator.share({
         title: `Photo by ${photo.author.name}`,
         text: photo.caption,
         url: window.location.href,
-      })
+      });
     }
-  }
+  };
 
   if (viewMode === "list") {
     return (
-      <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }} className="cursor-pointer" onClick={onClick}>
+      <motion.div
+        whileHover={{ y: -2 }}
+        transition={{ duration: 0.2 }}
+        className="cursor-pointer"
+        onClick={onClick}
+      >
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl">
           <div className="flex">
             <div className="relative w-48 h-32 flex-shrink-0">
-              <Image src={photo.src || "/placeholder.svg"} alt={photo.caption} fill className="object-cover" />
+              <Image
+                src={photo.src || "/placeholder.svg"}
+                alt={photo.caption}
+                fill
+                className="object-cover"
+              />
             </div>
             <CardContent className="flex-1 p-4">
               <div className="flex items-center space-x-3 mb-3">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={photo.author.avatar || "/placeholder.svg"} />
+                  <AvatarImage
+                    src={photo.author.avatar || "/placeholder.svg"}
+                  />
                   <AvatarFallback>
                     {photo.author.name
                       .split(" ")
@@ -57,7 +73,9 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{photo.author.name}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {photo.author.name}
+                  </p>
                   <div className="flex items-center text-xs text-gray-500">
                     <Clock className="h-3 w-3 mr-1" />
                     {photo.timestamp}
@@ -65,7 +83,9 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
                 </div>
               </div>
 
-              <p className="text-sm text-gray-800 mb-3 line-clamp-2">{photo.caption}</p>
+              <p className="text-sm text-gray-800 mb-3 line-clamp-2">
+                {photo.caption}
+              </p>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-sm text-gray-500">
@@ -91,7 +111,7 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
           </div>
         </Card>
       </motion.div>
-    )
+    );
   }
 
   return (
@@ -120,7 +140,9 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
                 className="rounded-full bg-white/90 backdrop-blur-sm"
                 onClick={handleBookmark}
               >
-                <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
+                <Bookmark
+                  className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`}
+                />
               </Button>
               <Button
                 size="sm"
@@ -138,7 +160,7 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
           <div className="flex items-center space-x-3 mb-3">
             <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm">
               <AvatarImage src={photo.author.avatar || "/placeholder.svg"} />
-              <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs">
+              <AvatarFallback className="bg-slate-800/50 border border-white/10 text-white text-xs">
                 {photo.author.name
                   .split(" ")
                   .map((n) => n[0])
@@ -146,7 +168,9 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">{photo.author.name}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {photo.author.name}
+              </p>
               <div className="flex items-center text-xs text-gray-500">
                 <Clock className="h-3 w-3 mr-1" />
                 {photo.timestamp}
@@ -154,7 +178,9 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
             </div>
           </div>
 
-          <p className="text-sm text-gray-800 mb-3 line-clamp-2 leading-relaxed">{photo.caption}</p>
+          <p className="text-sm text-gray-800 mb-3 line-clamp-2 leading-relaxed">
+            {photo.caption}
+          </p>
 
           <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
             <div className="flex items-center">
@@ -166,7 +192,11 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
           {/* Tags */}
           <div className="flex flex-wrap gap-1 mb-3">
             {photo.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs rounded-full">
+              <Badge
+                key={tag}
+                variant="secondary"
+                className="text-xs rounded-full"
+              >
                 #{tag}
               </Badge>
             ))}
@@ -193,5 +223,5 @@ export function PhotoCard({ photo, onClick, viewMode = "grid" }: PhotoCardProps)
         </CardContent>
       </Card>
     </motion.div>
-  )
+  );
 }

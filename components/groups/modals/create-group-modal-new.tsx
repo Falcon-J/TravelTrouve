@@ -30,7 +30,6 @@ export function CreateGroupModal({
 }: CreateGroupModalProps) {
   const [groupName, setGroupName] = useState("");
   const [isPrivate, setIsPrivate] = useState(true);
-  const [allowJoinRequests, setAllowJoinRequests] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -62,7 +61,6 @@ export function CreateGroupModal({
       const groupData: CreateGroupInput = {
         name: groupName.trim(),
         isPrivate,
-        allowJoinRequests,
       };
 
       const newGroup = await createGroup(groupData, user.uid);
@@ -78,7 +76,6 @@ export function CreateGroupModal({
       // Reset form
       setGroupName("");
       setIsPrivate(true);
-      setAllowJoinRequests(false);
     } catch (error) {
       toast({
         title: "Error creating group",
@@ -142,24 +139,6 @@ export function CreateGroupModal({
                 disabled={isLoading}
               />
             </div>
-
-            {!isPrivate && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-medium leading-none text-slate-300">
-                    Allow Join Requests
-                  </h4>
-                  <p className="text-xs text-slate-400">
-                    Let people request to join
-                  </p>
-                </div>
-                <Switch
-                  checked={allowJoinRequests}
-                  onCheckedChange={setAllowJoinRequests}
-                  disabled={isLoading}
-                />
-              </div>
-            )}
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">

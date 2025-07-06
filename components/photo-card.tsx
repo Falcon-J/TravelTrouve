@@ -14,13 +14,13 @@ import type { Photo } from "@/app/page";
 
 interface PhotoCardProps {
   photo: Photo;
-  onClick: () => void;
+  onClickAction: () => void;
   viewMode?: "grid" | "list";
 }
 
 export function PhotoCard({
   photo,
-  onClick,
+  onClickAction,
   viewMode = "grid",
 }: PhotoCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -47,7 +47,7 @@ export function PhotoCard({
         whileHover={{ y: -2 }}
         transition={{ duration: 0.2 }}
         className="cursor-pointer"
-        onClick={onClick}
+        onClick={onClickAction}
       >
         <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl">
           <div className="flex">
@@ -119,7 +119,7 @@ export function PhotoCard({
       whileHover={{ y: -4, scale: 1.02 }}
       transition={{ duration: 0.2 }}
       className="cursor-pointer group"
-      onClick={onClick}
+      onClick={onClickAction}
     >
       <Card className="overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl bg-white/80 backdrop-blur-sm">
         <div className="relative aspect-square overflow-hidden">

@@ -13,7 +13,6 @@ import {
   arrayUnion,
   arrayRemove,
   increment,
-
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import type { Group, CreateGroupInput } from "@/types/group";
@@ -41,7 +40,6 @@ export async function createGroup(data: CreateGroupInput) {
       name: data.name.trim(),
       code,
       isPrivate: data.isPrivate,
-      allowJoinRequests: data.allowJoinRequests ?? false,
       memberCount: 1,
       members: [currentUser.uid],
       recentPhotos: [],
@@ -61,7 +59,7 @@ export async function createGroup(data: CreateGroupInput) {
     return {
       ...groupDoc,
       id: groupId,
-      role:  "Admin", // Default to Admin for creator
+      role: "Admin", // Default to Admin for creator
       creatorId: currentUser.uid,
       adminIds: [currentUser.uid],
       memberIds: [currentUser.uid],

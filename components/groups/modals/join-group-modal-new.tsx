@@ -12,11 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Users, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  getGroupByCode,
-  joinGroup,
-  submitJoinRequest,
-} from "@/lib/group-utils";
+import { getGroupByCode, joinGroup } from "@/lib/group-utils";
 import { useAuth } from "@/context/auth-context";
 import type { Group } from "@/types/group";
 
@@ -72,12 +68,11 @@ export function JoinGroupModal({
         return;
       }
 
-      // Check if group is private and join requests are not allowed
-      if (group.isPrivate && !group.allowJoinRequests) {
+      // Check if group is private
+      if (group.isPrivate) {
         toast({
           title: "Private Group",
-          description:
-            "This group is private and doesn't allow join requests. You need an invitation.",
+          description: "This group is private. You need an invitation to join.",
           variant: "destructive",
         });
         return;
@@ -101,30 +96,7 @@ export function JoinGroupModal({
     setIsJoining(true);
 
     try {
-      // Check if this is a private group that requires join requests
-      if (foundGroup.isPrivate && foundGroup.allowJoinRequests) {
-        // Submit join request
-        await submitJoinRequest({
-          groupId: foundGroup.id,
-          userId: user.uid,
-          message: `Join request from ${
-            user.email || user.displayName || "Unknown User"
-          }`,
-        });
-
-        toast({
-          title: "Join request sent",
-          description:
-            "Your request to join this private group has been sent to the admins",
-        });
-
-        onOpenChangeAction(false);
-        setGroupCode("");
-        setFoundGroup(null);
-        return;
-      }
-
-      // Direct join for public groups or invited private groups
+      // Direct join for public groups
       await joinGroup(foundGroup.id, user.uid);
 
       toast({
@@ -228,9 +200,6 @@ export function JoinGroupModal({
                 </p>
                 <p className="text-sm text-slate-400">
                   {foundGroup.isPrivate ? "Private" : "Public"} group
-                  {foundGroup.isPrivate &&
-                    foundGroup.allowJoinRequests &&
-                    " • Join requests allowed"}
                 </p>
               </div>
             </div>
@@ -261,12 +230,8 @@ export function JoinGroupModal({
                 {isJoining ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {foundGroup.isPrivate && foundGroup.allowJoinRequests
-                      ? "Requesting..."
-                      : "Joining..."}
+                    Joining...
                   </>
-                ) : foundGroup.isPrivate && foundGroup.allowJoinRequests ? (
-                  "Request to Join"
                 ) : (
                   "Join Group"
                 )}

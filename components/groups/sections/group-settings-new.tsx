@@ -48,9 +48,6 @@ export function GroupSettings({
 }: GroupSettingsProps) {
   const [groupName, setGroupName] = useState(group.name);
   const [isPrivate, setIsPrivate] = useState(group.isPrivate);
-  const [allowJoinRequests, setAllowJoinRequests] = useState(
-    group.allowJoinRequests || false
-  );
   const [loading, setLoading] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const { user } = useAuth();
@@ -79,7 +76,6 @@ export function GroupSettings({
       await updateDoc(groupRef, {
         name: groupName.trim(),
         isPrivate,
-        allowJoinRequests,
         updatedAt: new Date(),
       });
 
@@ -87,7 +83,6 @@ export function GroupSettings({
         ...group,
         name: groupName.trim(),
         isPrivate,
-        allowJoinRequests,
       };
 
       onGroupUpdated?.(updatedGroup);
@@ -249,22 +244,6 @@ export function GroupSettings({
                 />
               </div>
 
-              {!isPrivate && (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-gray-300">Allow Join Requests</Label>
-                    <p className="text-sm text-gray-500">
-                      Let people request to join this group
-                    </p>
-                  </div>
-                  <Switch
-                    checked={allowJoinRequests}
-                    onCheckedChange={setAllowJoinRequests}
-                    disabled={!isAdmin}
-                  />
-                </div>
-              )}
-
               {isAdmin && (
                 <Button
                   onClick={handleSaveSettings}
@@ -333,13 +312,6 @@ export function GroupSettings({
                     </>
                   )}
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Join Requests</span>
-                <span className="text-white">
-                  {allowJoinRequests ? "Allowed" : "Disabled"}
-                </span>
               </div>
 
               <div className="flex items-center justify-between">
@@ -483,4 +455,3 @@ export function GroupSettings({
     </div>
   );
 }
-

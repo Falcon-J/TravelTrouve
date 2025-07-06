@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,6 +21,35 @@ export function Navbar() {
   const { user } = useAuth();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      if (typeof window !== "undefined") {
+        const currentScrollY = window.scrollY;
+
+        if (currentScrollY < lastScrollY || currentScrollY < 10) {
+          // Scrolling up or at top
+          setIsVisible(true);
+        } else {
+          // Scrolling down
+          setIsVisible(false);
+        }
+
+        setLastScrollY(currentScrollY);
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", controlNavbar);
+
+      // Cleanup function
+      return () => {
+        window.removeEventListener("scroll", controlNavbar);
+      };
+    }
+  }, [lastScrollY]);
 
   const handleSignOut = async () => {
     try {
@@ -37,7 +66,11 @@ export function Navbar() {
   if (!user) return null;
 
   return (
-    <nav className="sticky top-0 z-50 w-full glass border-b border-white/10">
+    <nav
+      className={`fixed top-0 z-50 w-full glass border-b border-white/10 transition-transform duration-300 ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

@@ -8,8 +8,7 @@ import {
   Search,
   Camera,
   Sparkles,
-  Settings,
-  UserCircle,
+ 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -150,14 +149,6 @@ export default function DashboardPage() {
     );
   }
 
-  const totalMembers = groups.reduce(
-    (acc, group) => acc + group.memberCount,
-    0
-  );
-  const totalPhotos = groups.reduce((acc, group) => acc + group.photoCount, 0);
-  const adminGroups = groups.filter((group) =>
-    group.adminIds.includes(user.uid)
-  );
 
   return (
     <>

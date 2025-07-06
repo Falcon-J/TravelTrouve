@@ -702,17 +702,6 @@ export function GroupMembers({ group, onGroupUpdated }: GroupMembersProps) {
                   {group.isPrivate ? "Private Group" : "Public Group"}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                {group.allowJoinRequests ? (
-                  <div className="h-2 w-2 bg-green-400 rounded-full" />
-                ) : (
-                  <div className="h-2 w-2 bg-red-400 rounded-full" />
-                )}
-                <span className="text-slate-300 text-sm">
-                  Join Requests{" "}
-                  {group.allowJoinRequests ? "Allowed" : "Not Allowed"}
-                </span>
-              </div>
             </CardContent>
           </Card>
         </div>

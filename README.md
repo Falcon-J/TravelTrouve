@@ -187,23 +187,3 @@ The app uses a consistent glass morphism design with:
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) for the amazing React framework
-- [Firebase](https://firebase.google.com/) for backend services
-- [Tailwind CSS](https://tailwindcss.com/) for styling
-- [Framer Motion](https://www.framer.com/motion/) for animations
-- [Radix UI](https://www.radix-ui.com/) for accessible components
-
-## 📞 Support
-
-If you have any questions or need help with setup, please open an issue or contact [your-email@example.com](mailto:your-email@example.com).
-
----
-
-Made with ❤️ by [Your Name](https://github.com/yourusername)
